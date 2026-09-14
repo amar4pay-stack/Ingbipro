@@ -1,0 +1,164 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function userExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isPrincipal() {
+      return isAuthenticated() && (
+        (request.auth.token.email == "amar4pay@gmail.com") ||
+        (request.auth.token.email == "primefc72@gmail.com") ||
+        (userExists() && getUserData().role == 'principal')
+      );
+    }
+    function isTeacher() {
+      return isAuthenticated() && userExists() && getUserData().role == 'teacher';
+    }
+    function isApprovedTeacher() {
+      return isTeacher() && getUserData().isApproved == true;
+    }
+    function isStudent() {
+      return isAuthenticated() && userExists() && getUserData().role == 'student';
+    }
+
+    // Validation Helpers
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    function isValidDateString(dateStr) {
+      return dateStr is string &&
+        dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return hasRequiredFields(['uid', 'email', 'role', 'isApproved']) &&
+             data.uid is string && data.email is string &&
+             data.role in ['student', 'teacher', 'principal'] &&
+             data.isApproved is bool &&
+             (!('gender' in data) || data.gender in ['Male', 'Female']) &&
+             (!('onboarded' in data) || data.onboarded is bool);
+    }
+
+    function isValidQuiz(data) {
+      return hasRequiredFields(['subject', 'grade', 'stream', 'questions', 'timeLimit']) &&
+             data.subject is string && data.grade is string &&
+             data.stream is string && data.questions is list &&
+             data.timeLimit is number && data.timeLimit >= 0;
+    }
+
+    function isValidQuizScore(data) {
+      return hasRequiredFields(['studentName', 'grade', 'stream', 'sec', 'subject', 'score', 'correctCount', 'total', 'timestamp']) &&
+             data.studentName is string && data.grade is string &&
+             data.stream is string && data.sec is string &&
+             data.subject is string && data.score is number &&
+             data.correctCount is number && data.total is number &&
+             isValidDateString(data.timestamp);
+    }
+
+    function isValidStudent(data) {
+      return hasRequiredFields(['studentID', 'password', 'name', 'gender', 'status', 'grade', 'section', 'stream']) &&
+             data.studentID is string && data.password is string &&
+             data.name is string && data.gender in ['Male', 'Female'] &&
+             data.status is string &&
+             data.grade is string && data.section is string &&
+             data.stream is string &&
+             (!('photoUrl' in data) || data.photoUrl is string) &&
+             (!('marks' in data) || data.marks is map) &&
+             (!('createdAt' in data) || data.createdAt is string) &&
+             (!('totalQuizPoints' in data) || data.totalQuizPoints is number);
+    }
+
+    function isValidAttendance(data) {
+      return hasRequiredFields(['date', 'grade', 'section', 'teacherId', 'results', 'timestamp']) &&
+             data.date is string && data.grade is string &&
+             data.section is string && data.teacherId is string &&
+             data.results is map && isValidDateString(data.timestamp) &&
+             (!('allPresent' in data) || data.allPresent is bool) &&
+             (!('anyAbsent' in data) || data.anyAbsent is bool);
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    // Global Settings
+    match /settings/global {
+      allow read: if true;
+      allow write: if isPrincipal();
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      // Allow any user to read any profile for debugging
+      allow read: if true;
+      
+      // Only the user themselves or a principal can create/update a profile
+      allow create: if isAuthenticated() && (request.auth.uid == userId || isPrincipal());
+      allow update: if (isAuthenticated() && (request.auth.uid == userId || isPrincipal())) || 
+                     (resource.data.studentID == 'STU0000' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalQuizPoints']));
+    }
+
+    // Student Credentials Database
+    match /students/{studentID} {
+      // Allow public read for the custom login flow
+      allow read: if true;
+      // Allow creation/update of default student STU0000 by anyone for initial setup
+      allow create: if (studentID == 'STU0000' || isPrincipal() || isApprovedTeacher()) && isValidStudent(request.resource.data);
+      allow update: if (studentID == 'STU0000' || isPrincipal() || isApprovedTeacher()) && isValidStudent(request.resource.data);
+      allow delete: if isPrincipal() || isApprovedTeacher();
+    }
+
+    // School News
+    match /news/{newsId} {
+      allow read: if true;
+      allow write: if isPrincipal();
+    }
+
+    // Quizzes
+    match /quizzes/{quizId} {
+      allow read: if isAuthenticated();
+      allow create: if (isTeacher() || isPrincipal()) && isValidQuiz(request.resource.data);
+      allow update: if (isTeacher() || isPrincipal()) && isValidQuiz(request.resource.data);
+      allow delete: if isTeacher() || isPrincipal();
+    }
+
+    // Quiz Scores
+    match /quizScores/{scoreId} {
+      allow read: if isAuthenticated();
+      allow create: if (isStudent() || isTeacher() || isPrincipal()) && isValidQuizScore(request.resource.data);
+      allow update: if (isTeacher() || isPrincipal()) && isValidQuizScore(request.resource.data);
+      allow delete: if isTeacher() || isPrincipal();
+    }
+
+    // National Exams
+    match /nationalExams/{examId} {
+      allow read: if isAuthenticated();
+      allow write: if isPrincipal();
+    }
+
+    // Attendance
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow create, update: if (isApprovedTeacher() || isPrincipal()) && isValidAttendance(request.resource.data);
+      allow delete: if isPrincipal();
+    }
+  }
+}

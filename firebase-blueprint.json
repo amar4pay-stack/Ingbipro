@@ -1,0 +1,154 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user role and approval status",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "teacher", "principal"] },
+        "gender": { "type": "string", "enum": ["Male", "Female"] },
+        "isApproved": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "isApproved"]
+    },
+    "GlobalSettings": {
+      "title": "Global Settings",
+      "description": "System-wide toggles controlled by the Principal",
+      "type": "object",
+      "properties": {
+        "disableTeacherRegistration": { "type": "boolean" },
+        "schoolName": { "type": "string" },
+        "gateImageUrl": { "type": "string" },
+        "teacherAccessKey": { "type": "string" }
+      },
+      "required": ["disableTeacherRegistration"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Pre-registered student credentials",
+      "type": "object",
+      "properties": {
+        "studentID": { "type": "string" },
+        "password": { "type": "string" },
+        "name": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Male", "Female"] },
+        "status": { "type": "string" },
+        "grade": { "type": "string" },
+        "section": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "marks": { "type": "object" }
+      },
+      "required": ["studentID", "password", "name", "gender", "status", "grade", "section"]
+    },
+    "News": {
+      "title": "News",
+      "description": "School announcements",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["title", "content", "date"]
+    },
+    "Quiz": {
+      "title": "Quiz",
+      "description": "Teacher-created quizzes",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "grade": { "type": "string" },
+        "stream": { "type": "string" },
+        "questions": { "type": "array" },
+        "timeLimit": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subject", "grade", "stream", "questions", "timeLimit"]
+    },
+    "QuizScore": {
+      "title": "Quiz Score",
+      "description": "Student quiz results",
+      "type": "object",
+      "properties": {
+        "studentName": { "type": "string" },
+        "grade": { "type": "string" },
+        "stream": { "type": "string" },
+        "sec": { "type": "string" },
+        "subject": { "type": "string" },
+        "score": { "type": "number" },
+        "correctCount": { "type": "number" },
+        "total": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentName", "grade", "stream", "sec", "subject", "score", "correctCount", "total", "timestamp"]
+    },
+    "NationalExam": {
+      "title": "National Exam",
+      "description": "National exam simulations",
+      "type": "object",
+      "properties": {
+        "year": { "type": "string" },
+        "stream": { "type": "string" },
+        "subject": { "type": "string" },
+        "questions": { "type": "array" },
+        "timeLimit": { "type": "number" }
+      },
+      "required": ["year", "stream", "subject", "questions", "timeLimit"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily student attendance records",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "grade": { "type": "string" },
+        "section": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "results": { "type": "object" },
+        "allPresent": { "type": "boolean" },
+        "anyAbsent": { "type": "boolean" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "grade", "section", "teacherId", "results", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "User profiles"
+    },
+    "/settings/global": {
+      "schema": "GlobalSettings",
+      "description": "Global system settings"
+    },
+    "/students/{studentID}": {
+      "schema": "Student",
+      "description": "Student credentials database"
+    },
+    "/news/{newsId}": {
+      "schema": "News",
+      "description": "School news items"
+    },
+    "/quizzes/{quizId}": {
+      "schema": "Quiz",
+      "description": "Quizzes collection"
+    },
+    "/quizScores/{scoreId}": {
+      "schema": "QuizScore",
+      "description": "Quiz scores collection"
+    },
+    "/nationalExams/{examId}": {
+      "schema": "NationalExam",
+      "description": "National exams collection"
+    },
+    "/attendance/{attendanceId}": {
+      "schema": "Attendance",
+      "description": "Daily attendance records"
+    }
+  }
+}

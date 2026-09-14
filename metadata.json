@@ -1,0 +1,6 @@
+{
+  "name": "EduManage Pro",
+  "description": "A professional School Management System with dual-role authentication, teacher approval workflows, and a principal's master control dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

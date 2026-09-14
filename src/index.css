@@ -1,0 +1,71 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700&display=swap');
+
+@theme {
+  --color-neon-cyan: #00e5ff;
+  --color-neon-blue: #007bff;
+  --color-dark-bg: #000000;
+  --color-sidebar-bg: rgba(20, 22, 26, 0.85);
+  --font-plus-jakarta: "Plus Jakarta Sans", "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-dark-bg text-white antialiased;
+  }
+
+  input {
+    @apply antialiased;
+  }
+
+  input[type="password"] {
+    -webkit-text-security: asterisk !important;
+  }
+
+  /* Default: High visibility for dark backgrounds (Teacher/Principal/Body) */
+  input::placeholder,
+  textarea::placeholder {
+    color: #FFFFFF !important;
+    opacity: 1 !important;
+  }
+
+  input,
+  select,
+  textarea {
+    color: #FFFFFF !important;
+  }
+
+  /* Specific Override for White backgrounds (Student Portal) */
+  .bg-white input::placeholder,
+  .bg-white textarea::placeholder {
+    color: #78716c !important; /* stone-500 for readable contrast on white */
+    opacity: 1 !important;
+  }
+
+  .bg-white input,
+  .bg-white select,
+  .bg-white textarea {
+    color: #000000 !important;
+  }
+}
+
+.neon-glow {
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+}
+
+.sidebar-blur {
+  backdrop-filter: blur(15px);
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
